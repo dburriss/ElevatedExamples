@@ -13,13 +13,19 @@ module MyTypeDescriptor =
 //defining function types. Not needed but useful to think about types before implementation.
 type GetMyTypeFn = int -> Result<MyType option,string>
 type SetFn = Result<MyType option,string> -> int -> Result<MyType,string>
-//type ValidatePositiveFn = Result<MyType,string> -> Result<MyType,string>
-//type LogFn = Result<MyType,string> -> Result<MyType,string>
+type ValidatePositiveFn = Result<MyType,string> -> Result<MyType,string>
+type LogFn = Result<MyType,string> -> Result<MyType,string>
 type ConvertFn = Result<MyType,string> -> Result<MyTypeDescriptor,string>
 
 //helpers
 let toString s = s.ToString()
 let flip f a b = f b a
+let logObj a = printf "%A" a
+let tee f x = 
+    f x |> ignore
+    x
+let teeLog a = tee logObj a
+let validateMyTypeIsPositive a = a.Nr > 0
 
 //adapters
 let errorIfNone r =
@@ -28,11 +34,16 @@ let errorIfNone r =
     | Ok None -> Error "Not found"
     | Error s -> Error s
 
+let validateMyTypeIsPositiveR x = if validateMyTypeIsPositive x then Ok x else Error "Number should not be negative"
+
 //impl
 let get : GetMyTypeFn = fun i ->
     MyType.create i
     |> Some
     |> Ok
+
+let validate : ValidatePositiveFn = fun a ->
+    Result.bind validateMyTypeIsPositiveR a
 
 let set : SetFn = fun t i ->
     let t' = errorIfNone t
@@ -67,3 +78,26 @@ let ``Error set to 2 is Error`` () =
     | Ok x -> Assert.False(true, "Was Ok when should be Error")
     | Error s -> Assert.Equal("Something went wrong", s);
     
+[<Fact>]
+let ``Logging just passes value through`` () =
+    let setTo2 = (set |> flip) 2 
+    let r = get(1) |> setTo2 |> convert |> teeLog
+    match r with
+    | Ok x -> Assert.Equal("2", x.Description)
+    | Error s -> failwith s
+
+[<Fact>]
+let ``ValidatePositive on positive Ok`` () =
+    let setTo2 = (set |> flip) 2 
+    let r = get(1) |> setTo2 |> validate |> convert |> teeLog
+    match r with
+    | Ok x -> Assert.Equal("2", x.Description)
+    | Error s -> failwith s
+
+[<Fact>]
+let ``ValidatePositive on negative Error`` () =
+    let setTo2 = (set |> flip) -1
+    let r = get(1) |> setTo2 |> validate |> convert |> teeLog
+    match r with
+    | Ok x -> Assert.False(true, "Was Ok when should be Error")
+    | Error s -> Assert.Equal("Number should not be negative", s);

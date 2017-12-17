@@ -37,8 +37,6 @@ namespace LanguageExtExamples
         static Func<OptionalResult<MyType>, int, Result<MyType>> Set = (t, i) => t.Apply(ErrorIfNone).Map(x => new MyType(i));
         static Func<Result<MyType>, Result<MyTypeDescriptor>> Convert = t => t.Map(x => new MyTypeDescriptor(x.Nr));
 
-        //test helper
-
         [Fact]
         public void A1SetTo2Is2()
         {
