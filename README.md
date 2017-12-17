@@ -37,5 +37,15 @@ The final happy-path workflow in F# then looks like this:
 let setTo2 = (set |> flip) 2
 let r = get(1) |> setTo2 |> validate |> convert |> tapLog
 ```
+and in C#:
 
+```csharp
+Func<int, Func<OptionalResult<MyType>, Result<MyType>>> currySet = curry(flip(Set));
+var set2 = currySet(2);
+var result =
+    Get(1)
+    .Apply(set2)
+    .Apply(Validate)
+    .Apply(Convert);
+```
 As you can see from the definition of `SetFn`, the `int` parameter comes after the elevated `Result` type which would be passed through when composing so to use partial application we need to flip the parameter order.
