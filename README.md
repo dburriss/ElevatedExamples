@@ -48,4 +48,25 @@ var result =
     .Apply(Validate)
     .Apply(Convert);
 ```
+
 As you can see from the definition of `SetFn`, the `int` parameter comes after the elevated `Result` type which would be passed through when composing so to use partial application we need to flip the parameter order.
+
+## A note on Elevated types (Return)
+
+TODO
+
+## Using Map
+
+TODO
+
+## Using Apply
+
+TODO
+
+## Using Bind
+
+TODO
+
+## Adapters, Tee, and Error handling
+
+TODO
