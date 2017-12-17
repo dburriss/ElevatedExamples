@@ -82,6 +82,8 @@ Basically they are types that have some sort of state. The 2 we deal with here a
 - `Option` represents something where data might not be present. Return functions for `Option` are `Some` and `None`.
 - `Result` represents a return type that might be data but instead could also be an error. In F# to lift a value you use `Ok` and `Error`. *Note: in the examples I will often shorten `Result<MyType,string>` to `Result<MyType>` to keep things concise.*
 
+A final note on elevated types in general. It is best to stay in the elevated world as much as possible within your application. If you keep dropping back to normal values to work with them you will experience a lot of friction. Instead of getting values out and working with them it is better to use the techniques outlined in this example to use functions to manipulate the wrapped values within the elevated world. This will not always be possible but it is more often than you initially would think. It does require a change in mindset. Instead of get a piece of data and issuing imperative commands that manipulate it you use functions to declare what you would like to happen and then hand those functions off appropriately.
+
 [See here for further reading on return](https://fsharpforfunandprofit.com/posts/elevated-world/#return)
 
 ## Using Map
@@ -144,6 +146,68 @@ So here `validateMyTypeIsPositiveR` is a function that lifts a normal type to an
 
 [See here for further reading on bind](https://fsharpforfunandprofit.com/posts/elevated-world-2/#bind)
 
-## Adapters, Tee/Tap, and Error handling
+## Curry, Adapters, Tee/Tap, and Error handling
+
+Often the input and output of function calls don't line up and you need to do some extra work to get types to match up.
+
+### Partial Application and Currying
+
+If functions have more than 1 input you can use partial application to apply values to the function and get a new function back with that value baked in. Earlier we had the example of the set function. The set function has the signature `Result<MyType option> -> int -> Result<MyType>`. Partial application works from the first parameter so we first call `flip` on `set`. Note that partial application works automatically with F# if not all parameters are supplied.
+
+```fsharp
+//set:Result<MyType option> -> int -> Result<MyType>
+let flippedSet = flip set //int -> Result<MyType option> -> Result<MyType>
+let set2 = flippedSet 2//Result<MyType option> -> Result<MyType> with the 2 now baked in
+```
+
+In the C# example things are a little busier because C# does not support it so we use some functions from the LanguageExt library to help
+
+```csharp
+//flip so int is in correct place to curry, then curry the function with value of 2
+Func<int, Func<OptionalResult<MyType>, Result<MyType>>> currySet = curry(flip(Set));
+var set2 = currySet(2);
+```
+
+### Adapters
+
+In the examples above I chose to use `Set`, one of the main workflow parts to map from `Result<MyType option>` to change to `Result<MyType>`. That probably isn't the best but luckily internally it just uses an adapter function. So I can reuse that. A workflow that does not use set could then look something like this:
+
+```fsharp
+//adapters
+let errorIfNone r =
+    match r with
+    | Ok (Some x) -> Ok x
+    | Ok None -> Error "Not found"
+    | Error s -> Error s
+
+//workflow
+let r = get(1) |> errorIfNone |> validate |> convert |> tapLog
+```
+
+`errorIfNone` is an adapter from the optional result to the non-optional result.
+
+### Tee/Tap
+
+When chaining these workflows having a function that returns `unit` (think of it as a functional `void` except it is a value) isn't very useful. `void` functions are usually something that changes state. You can continue to chain calls together though by defining a function that does what needs to be done and then just returns the input parameter. That function is often called `tee` or `tap`.
+
+```fsharp
+let tap f x = //or tee
+    f x |> ignore
+    x
+
+//normal logging function
+let logObj a = printf "%A" a
+
+//pass-through logging
+let tapLog a = tap logObj a
+```
+
+As you can see we can use `tap` as an adapter that gives us a function that can be chained.
+
+### Exception handling
+
+TODO
+
+## Lists
 
 TODO

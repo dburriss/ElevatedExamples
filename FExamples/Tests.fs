@@ -88,9 +88,9 @@ let ``Logging just passes value through`` () =
 [<Fact>]
 let ``ValidatePositive on positive Ok`` () =
     let setTo2 = (set |> flip) 2 
-    let r = get(1) |> setTo2 |> validate |> convert |> tapLog
+    let r = get(1) |> errorIfNone |> validate |> convert |> tapLog
     match r with
-    | Ok x -> Assert.Equal("2", x.Description)
+    | Ok x -> Assert.Equal("1", x.Description)
     | Error s -> failwith s
 
 [<Fact>]
