@@ -21,10 +21,9 @@ type ConvertFn = Result<MyType,string> -> Result<MyTypeDescriptor,string>
 let toString s = s.ToString()
 let flip f a b = f b a
 let logObj a = printf "%A" a
-let tee f x = 
+let tap f x = //or tee
     f x |> ignore
     x
-let teeLog a = tee logObj a
 let validateMyTypeIsPositive a = a.Nr > 0
 
 //adapters
@@ -36,14 +35,14 @@ let errorIfNone r =
 
 let validateMyTypeIsPositiveR x = if validateMyTypeIsPositive x then Ok x else Error "Number should not be negative"
 
+let tapLog a = tap logObj a
 //impl
 let get : GetMyTypeFn = fun i ->
     MyType.create i
     |> Some
     |> Ok
 
-let validate : ValidatePositiveFn = fun a ->
-    Result.bind validateMyTypeIsPositiveR a
+let validate : ValidatePositiveFn = fun a -> Result.bind validateMyTypeIsPositiveR a
 
 let set : SetFn = fun t i ->
     let t' = errorIfNone t
@@ -81,7 +80,7 @@ let ``Error set to 2 is Error`` () =
 [<Fact>]
 let ``Logging just passes value through`` () =
     let setTo2 = (set |> flip) 2 
-    let r = get(1) |> setTo2 |> convert |> teeLog
+    let r = get(1) |> setTo2 |> convert |> tapLog
     match r with
     | Ok x -> Assert.Equal("2", x.Description)
     | Error s -> failwith s
@@ -89,15 +88,15 @@ let ``Logging just passes value through`` () =
 [<Fact>]
 let ``ValidatePositive on positive Ok`` () =
     let setTo2 = (set |> flip) 2 
-    let r = get(1) |> setTo2 |> validate |> convert |> teeLog
+    let r = get(1) |> setTo2 |> validate |> convert |> tapLog
     match r with
     | Ok x -> Assert.Equal("2", x.Description)
     | Error s -> failwith s
 
 [<Fact>]
 let ``ValidatePositive on negative Error`` () =
-    let setTo2 = (set |> flip) -1
-    let r = get(1) |> setTo2 |> validate |> convert |> teeLog
+    let setToMinus1 = (set |> flip) -1
+    let r = get(1) |> setToMinus1 |> validate |> convert |> tapLog
     match r with
     | Ok x -> Assert.False(true, "Was Ok when should be Error")
     | Error s -> Assert.Equal("Number should not be negative", s);
