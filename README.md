@@ -93,7 +93,7 @@ let errorIfNone r =
     | Error s -> Error s
 ```
 
-So it checks if there is no data and converts that `None` case to an `Error`
+So it checks if there is no data and converts that `None` case to an `Error`.
 
 A final note on elevated types in general. It is best to stay in the elevated world as much as possible within your application. If you keep dropping back to normal values to work with them you will experience a lot of friction. Instead of getting values out and working with them it is better to use the techniques outlined in this example to use functions to manipulate the wrapped values within the elevated world. This will not always be possible but it is more often than you initially would think. It does require a change in mindset. Instead of get a piece of data and issuing imperative commands that manipulate it you use functions to declare what you would like to happen and then hand those functions off appropriately.
 
