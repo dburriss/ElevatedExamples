@@ -14,14 +14,6 @@ namespace LanguageExtExamples
                 Fail: ex => new Result<TResult>(ex)
             );
         }
-
-        public static Option<TResult> Bind<TInput, TResult>(this Option<TInput> option,
-                                                            Func<TInput, Option<TResult>> func)
-        {
-            return option.Match(
-                Some: func,
-                None: () => Option<TResult>.None
-            );
-        }
     }
+
 }
