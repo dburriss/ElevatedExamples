@@ -159,6 +159,39 @@ So here `validateMyTypeIsPositiveR` is a function that lifts a normal type to an
 
 [See here for further reading on bind](https://fsharpforfunandprofit.com/posts/elevated-world-2/#bind)
 
+## Summary of Map, Apply, and Bind
+
+**Map**: map internal value to another value  
+**Bind**: For function that takes normal value and returns an elevated type  
+**Apply**: For function that takes an elevated value and can return anything  
+
+Example from [ComplexTests.cs](https://github.com/dburriss/ElevatedExamples/blob/master/LanguageExtExamples/ComplexTests.cs)
+
+```csharp
+[Fact]
+public void Use_Bind_Instead_Of_ToTry_To_Return_A_Different_Elevated_Type()
+{
+    var toTry = fun<TryOption<Person>, Try<Person>>(opt => opt.Match(
+            Some: x => Try(x),
+            None: () => Try<Person>(new ArgumentNullException()),
+            Fail: ex => Try<Person>(ex)
+        ));
+
+    var updatedPerson =
+        people
+        .Fetch("Bob")
+        // map: on an E(x) takes in the normal wrapped value x and returns a normal value y. Result is transformed value E(y).
+        .Map(p => Person.UpdateName(p, "Bobby"))
+        // apply: on an E(x) takes in E(x) and returns whatever. Useful for changing elevated types or passing to function that accepts E(x)
+        .Apply(toTry)
+        //bind: on an E(x) takes in the normal wrapped value x and returns a E(y). Useful when function takes in normal value but returns same elevated value.
+        .Bind(p => people.Update("Bob", p))
+        .Try();
+    var updated = ElevatedTypesUnsafeHelpers.ExtractUnsafe(people.Fetch("Bobby").Try());
+    Assert.Equal("Bobby", updated.Name);
+}
+```
+
 ## Curry, Adapters, Tee/Tap, and Error handling
 
 Often the input and output of function calls don't line up and you need to do some extra work to get types to match up.
@@ -213,6 +246,10 @@ let logObj a = printf "%A" a
 
 //pass-through logging
 let tapLog a = tap logObj a
+```
+
+```csharp
+static T1 Tap<T1>(Action<T1> f, T1 x) { f(x); return x; }
 ```
 
 As you can see we can use `tap` as an adapter that gives us a function that can be chained.

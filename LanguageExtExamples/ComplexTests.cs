@@ -141,9 +141,12 @@ namespace LanguageExtExamples
             var updatedPerson =
                 people
                 .Fetch("Bob")
-                .Map(p => Person.UpdateName(p, "Bobby"))// map: on an E(x) takes in the normal wrapped value x and returns a normal value y. Result is transformed value E(y).
-                .Apply(toTry)// apply: on an E(x) takes in E(x) and returns whatever. Useful for changing elevated types or passing to function that accepts E(x)
-                .Bind(p => people.Update("Bob", p))//bind: on an E(x) takes in the normal wrapped value x and returns a E(y). Useful when function takes in normal value but returns same elevated value.
+                // map: on an E(x) takes in the normal wrapped value x and returns a normal value y. Result is transformed value E(y).
+                .Map(p => Person.UpdateName(p, "Bobby"))
+                // apply: on an E(x) takes in E(x) and returns whatever. Useful for changing elevated types or passing to function that accepts E(x)
+                .Apply(toTry)
+                //bind: on an E(x) takes in the normal wrapped value x and returns a E(y). Useful when function takes in normal value but returns same elevated value.
+                .Bind(p => people.Update("Bob", p))
                 .Try();
             var updated = ElevatedTypesUnsafeHelpers.ExtractUnsafe(people.Fetch("Bobby").Try());
             Assert.Equal("Bobby", updated.Name);
